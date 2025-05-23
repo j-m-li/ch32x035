@@ -1,3 +1,6 @@
+# 2025 PUBLIC DOMAIN by JML
+
+# BLINK LED on PA0
 
 	.section .init,"ax",@progbits
 	.global	_start
@@ -187,7 +190,61 @@ handle_reset:
 	csrw mtvec, t0
 
 	jal SystemInit
-	la t0, main
+
+	li s0,0x40021000 # RCC
+	lw a0,24(s0) # RCC->PB2PCENR 
+	ori a0,a0,4 # RCC_APB2Periph_GPIOA  0x00000004
+	sw a0,24(s0)
+
+	lw a0,28(s0) # RCC->APB1PCENR 
+	li a1,0x10000000 # RCC_APB1Periph_PWR  0x10000000
+	or a0,a0,a1
+	sw a0,28(s0)
+
+
+/*
+      GPIO_TypeDef :
+	CFGLR 0
+	CFGHR 4
+	INDR 8
+	OUTDR 12
+	BSHR 16
+	BCR 20
+	LCKR 24
+	CFGXR 28
+	BSXR 32
+*/
+	lui s0,0x40011
+	addi s0,s0,-2048
+	li a0,1 # mode out pp 50MHz
+	sw a0,0(s0) # CFGLR
+
+loop1:
+	li a0, 0x2FFFFF
+loop2:
+	addi a0, a0, -1
+	bnez a0, loop2
+
+	li a1,1
+	mv a0,s0
+	sw a1,20(a0) # BCR
+
+	li a0, 0xFFFFF
+loop3:
+	addi a0, a0, -1
+	bnez a0, loop3
+
+	li a1,1
+	mv a0,s0 
+
+	#slli a5,a1,0x10
+	#srli a5,a5,0x10
+	sw a1,16(a0) # BSHR
+#	srli a1,a1,0x10
+#	sw a1,32(a0) # BSXR
+
+	j loop1
+#	la t0, main
 	csrw mepc, t0
 	mret
 
