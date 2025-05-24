@@ -69,7 +69,7 @@ _vector_base:
 	.word TIM2_BRK_IRQHandler
 	.word TIM3_IRQHandler
 
-	.option rvc;
+	#.option rvc;
 	.section .text.vector_handler, "ax", @progbits
 	.weak NMI_Handler
 	.weak HardFault_Handler
@@ -219,7 +219,12 @@ handle_reset:
 */
 	lui s0,0x40011
 	addi s0,s0,-2048 # GPIOA
-	li a0,1 # PA0 : mode out pp 50MHz (mode is 4 bits)
+	lw a0,0(s0)
+	# mode: 0=AIN, 4=IN_FLOATING, 5=OUT_OD, 1=OUT_PP, 13=AF_OD, 9=AF_PP
+	# 8=IN: BCR->PullDown BSHR->PullUp
+	andi a0,a0,0xFFFFFFF0
+	ori a0,a0,1 # PA0 : mode OUT_PushPull  50MHz (mode is 4 bits per pin)
+	
 	sw a0,0(s0) # CFGLR
 
 # main loop
